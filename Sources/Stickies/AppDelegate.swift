@@ -86,18 +86,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func statusMenu() -> NSMenu {
         let menu = NSMenu()
 
-        let newItem = menu.addItem(withTitle: "New Note", action: #selector(newNote(_:)), keyEquivalent: "")
-        newItem.target = self
+        menu.addItem(newNoteMenuItem())
 
-        let bringForwardItem = menu.addItem(withTitle: "Bring Notes Forward", action: #selector(bringAllNotesToFront(_:)), keyEquivalent: "")
-        bringForwardItem.target = self
+        menu.addItem(bringNotesForwardMenuItem())
 
-        let closeItem = menu.addItem(withTitle: "Close Note", action: #selector(closeActiveNote(_:)), keyEquivalent: "")
-        closeItem.target = self
+        menu.addItem(closeNoteMenuItem())
 
         menu.addItem(.separator())
 
-        let floatItem = makeFloatAboveOtherWindowsItem(keyEquivalent: "")
+        let floatItem = makeFloatAboveOtherWindowsItem()
         menu.addItem(floatItem)
 
         menu.addItem(.separator())
@@ -127,11 +124,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let fileMenu = NSMenu(title: "File")
         fileItem.submenu = fileMenu
 
-        let newItem = fileMenu.addItem(withTitle: "New Note", action: #selector(newNote(_:)), keyEquivalent: "n")
-        newItem.target = self
+        fileMenu.addItem(newNoteMenuItem())
 
-        let closeItem = fileMenu.addItem(withTitle: "Close Note", action: #selector(closeActiveNote(_:)), keyEquivalent: "w")
-        closeItem.target = self
+        fileMenu.addItem(closeNoteMenuItem())
 
         fileMenu.addItem(.separator())
         let folderItem = fileMenu.addItem(withTitle: "Show Notes Folder", action: #selector(showNotesFolder(_:)), keyEquivalent: "")
@@ -165,23 +160,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowItem.submenu = windowMenu
 
         windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
-        windowMenu.addItem(makeFloatAboveOtherWindowsItem(keyEquivalent: "f"))
+        windowMenu.addItem(makeFloatAboveOtherWindowsItem())
 
         windowMenu.addItem(.separator())
-        let bringForwardItem = windowMenu.addItem(withTitle: "Bring Notes Forward", action: #selector(bringAllNotesToFront(_:)), keyEquivalent: "")
-        bringForwardItem.target = self
+        windowMenu.addItem(bringNotesForwardMenuItem())
         NSApp.windowsMenu = windowMenu
 
         return windowItem
     }
 
-    private func makeFloatAboveOtherWindowsItem(keyEquivalent: String) -> NSMenuItem {
+    private func newNoteMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "New Note", action: #selector(newNote(_:)), keyEquivalent: "n")
+        item.target = self
+        return item
+    }
+
+    private func closeNoteMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Close Note", action: #selector(closeActiveNote(_:)), keyEquivalent: "w")
+        item.target = self
+        return item
+    }
+
+    private func bringNotesForwardMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Bring Notes Forward", action: #selector(bringAllNotesToFront(_:)), keyEquivalent: "b")
+        item.keyEquivalentModifierMask = [.command, .option]
+        item.target = self
+        return item
+    }
+
+    private func makeFloatAboveOtherWindowsItem() -> NSMenuItem {
         let item = NSMenuItem(
             title: "Float Above Windows",
             action: #selector(toggleNotesFloatAboveOtherWindows(_:)),
-            keyEquivalent: keyEquivalent
+            keyEquivalent: "f"
         )
-        item.keyEquivalentModifierMask = keyEquivalent.isEmpty ? [] : [.command, .option]
+        item.keyEquivalentModifierMask = [.command, .option]
         item.target = self
         item.state = notesFloatAboveOtherWindows ? .on : .off
         floatAboveOtherWindowsItems.append(item)
