@@ -11,7 +11,12 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
     private var isClosingFromStore = false
     private var activationHandler: (UUID) -> Void
 
-    init(note: StickyNote, store: NoteStore, activationHandler: @escaping (UUID) -> Void) {
+    init(
+        note: StickyNote,
+        store: NoteStore,
+        notesFloatAboveOtherWindows: Bool,
+        activationHandler: @escaping (UUID) -> Void
+    ) {
         noteID = note.id
         self.store = store
         self.activationHandler = activationHandler
@@ -27,7 +32,7 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
 
         panel.delegate = self
         panel.contentViewController = NSHostingController(rootView: NoteEditorView(noteID: note.id, store: store))
-        configureWindow(for: note)
+        configureWindow(for: note, notesFloatAboveOtherWindows: notesFloatAboveOtherWindows)
     }
 
     func show() {
@@ -40,6 +45,18 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
         let currentFrame = StickyWindowFrame(nsRect: panel.frame)
         if currentFrame != note.frame, !panel.inLiveResize {
             panel.setFrame(note.frame.nsRect, display: true)
+        }
+    }
+
+    func setFloatsAboveOtherWindows(_ floatsAboveOtherWindows: Bool) {
+        if floatsAboveOtherWindows {
+            panel.level = .floating
+            panel.isFloatingPanel = true
+            panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        } else {
+            panel.level = .normal
+            panel.isFloatingPanel = false
+            panel.collectionBehavior = []
         }
     }
 
@@ -69,7 +86,7 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
         store?.deleteNote(id: noteID)
     }
 
-    private func configureWindow(for note: StickyNote) {
+    private func configureWindow(for note: StickyNote, notesFloatAboveOtherWindows: Bool) {
         panel.title = "Sticky Note"
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
@@ -77,13 +94,11 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
         panel.standardWindowButton(.closeButton)?.isHidden = true
         panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         panel.standardWindowButton(.zoomButton)?.isHidden = true
-        panel.level = .floating
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.hidesOnDeactivate = false
-        panel.isFloatingPanel = true
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 220, height: 160)
         panel.backgroundColor = note.color.nsColor
+        setFloatsAboveOtherWindows(notesFloatAboveOtherWindows)
         panel.setFrame(note.frame.nsRect.clampedToVisibleScreen(), display: false)
     }
 

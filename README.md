@@ -4,8 +4,8 @@ A native macOS 26+ sticky-notes app inspired by Apple Stickies.
 
 This first version focuses on local behavior:
 
-- independent floating note windows
-- always-on-top notes
+- independent note windows
+- optional always-on-top behavior through an app-wide floating-window toggle
 - automatic persistence
 - Markdown/plain-text note files
 - hot reload when files change on disk
@@ -31,4 +31,3 @@ swift test
 Notes are stored as one Markdown file per note in `~/.stickies/notes`. Each file
 starts with a small JSON metadata comment for the note id, color, timestamps, and
 window frame, followed by the editable Markdown/plain-text body.
-
