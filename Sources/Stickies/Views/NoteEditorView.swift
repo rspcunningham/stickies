@@ -9,12 +9,10 @@ struct NoteEditorView: View {
     var body: some View {
         if let note = store.note(id: noteID) {
             ZStack(alignment: .topTrailing) {
-                TextEditor(text: textBinding(for: note.id))
-                    .font(.system(size: 15))
-                    .scrollContentBackground(.hidden)
+                PlainTextEditor(text: textBinding(for: note.id))
                     .padding(.leading, 12)
                     .padding(.trailing, 28)
-                    .padding(.top, 2)
+                    .padding(.top, 12)
                     .padding(.bottom, 12)
 
                 Button {
