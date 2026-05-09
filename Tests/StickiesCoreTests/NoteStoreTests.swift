@@ -59,6 +59,36 @@ func noteStoreHotReloadsExternalDiskChanges() async throws {
     #expect(store.note(id: note.id)?.text == "changed outside the app")
 }
 
+@MainActor
+@Test
+func noteStoreAppliesRemoteChangesToMemoryAndDisk() throws {
+    let directory = temporaryDirectory()
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let diskStore = NoteDiskStore(directory: directory)
+    let store = NoteStore(diskStore: diskStore)
+    store.start()
+    defer {
+        store.stop()
+    }
+
+    let localNote = try #require(store.notes.first)
+    let remoteNote = StickyNote(
+        id: try #require(UUID(uuidString: "33333333-3333-3333-3333-333333333333")),
+        text: "from icloud",
+        color: .green
+    )
+
+    store.applyRemoteChanges(upserting: [remoteNote], deleting: [localNote.id])
+
+    #expect(store.note(id: localNote.id) == nil)
+    #expect(store.note(id: remoteNote.id) == remoteNote)
+    #expect(!FileManager.default.fileExists(atPath: diskStore.url(for: localNote).path))
+    #expect(FileManager.default.fileExists(atPath: diskStore.url(for: remoteNote).path))
+}
+
 private func temporaryDirectory() -> URL {
     FileManager.default.temporaryDirectory
         .appendingPathComponent("stickies-tests-\(UUID().uuidString)", isDirectory: true)

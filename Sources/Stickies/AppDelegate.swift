@@ -5,6 +5,7 @@ import StickiesCore
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let noteStore = NoteStore()
     private var windowManager: WindowManager?
+    private var cloudSyncController: CloudNoteSyncController?
     private var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -16,6 +17,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         self.windowManager = windowManager
         windowManager.start()
 
+        if CloudKitEntitlementStatus.canUseCloudKit {
+            let cloudSyncController = CloudNoteSyncController(store: noteStore)
+            self.cloudSyncController = cloudSyncController
+            cloudSyncController.start()
+            NSApp.registerForRemoteNotifications()
+        }
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceDidWake(_:)),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
+
         bringAllNotesToFront(nil)
     }
 
@@ -24,7 +39,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        cloudSyncController?.stop()
         noteStore.flushPendingSaves()
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        cloudSyncController?.syncNow(reason: "app-active")
+    }
+
+    func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
+        cloudSyncController?.syncNow(reason: "cloudkit-push")
     }
 
     @objc private func newNote(_ sender: Any?) {
@@ -54,6 +78,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     @objc private func showNotesFolder(_ sender: Any?) {
         NSWorkspace.shared.open(noteStore.notesDirectory)
+    }
+
+    @objc private func syncNow(_ sender: Any?) {
+        cloudSyncController?.syncNow(reason: "menu")
+    }
+
+    @objc private func workspaceDidWake(_ notification: Notification) {
+        cloudSyncController?.syncNow(reason: "wake")
     }
 
     @objc private func setEditorFontFamily(_ sender: Any?) {
@@ -86,6 +118,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             let note = targetNote()
             menuItem.state = note?.floatsAboveWindows == true ? .on : .off
             return note != nil
+        case #selector(syncNow(_:)):
+            return cloudSyncController != nil
         case #selector(setEditorFontFamily(_:)):
             guard let rawValue = menuItem.representedObject as? String,
                   let fontFamily = EditorFontFamily(rawValue: rawValue) else {
@@ -124,6 +158,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
         let floatItem = makeFloatAboveOtherWindowsItem()
         menu.addItem(floatItem)
+
+        let syncItem = menu.addItem(withTitle: "Sync Now", action: #selector(syncNow(_:)), keyEquivalent: "s")
+        syncItem.keyEquivalentModifierMask = [.command, .option]
+        syncItem.target = self
 
         menu.addItem(editorSettingsMenuItem(title: "Text"))
 

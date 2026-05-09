@@ -13,6 +13,12 @@ APP_CONTENTS="$APP_BUNDLE/Contents"
 APP_MACOS="$APP_CONTENTS/MacOS"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
+ENTITLEMENTS="$ROOT_DIR/Stickies.entitlements"
+SIGNED_ENTITLEMENTS="$DIST_DIR/Stickies.signed.entitlements"
+CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
+PROVISIONING_PROFILE="${PROVISIONING_PROFILE:-}"
+CODESIGN_OPTIONS="${CODESIGN_OPTIONS:---options runtime}"
+APS_ENVIRONMENT="${APS_ENVIRONMENT:-development}"
 
 cd "$ROOT_DIR"
 
@@ -48,6 +54,22 @@ cat >"$INFO_PLIST" <<PLIST
 </dict>
 </plist>
 PLIST
+
+if [[ -n "$CODESIGN_IDENTITY" && -f "$ENTITLEMENTS" ]]; then
+  if [[ -z "$PROVISIONING_PROFILE" ]]; then
+    echo "CODESIGN_IDENTITY was set, but PROVISIONING_PROFILE was not." >&2
+    echo "CloudKit entitlements require a matching embedded provisioning profile." >&2
+    exit 2
+  fi
+
+  cp "$PROVISIONING_PROFILE" "$APP_CONTENTS/embedded.provisionprofile"
+  sed "s/<string>development<\\/string>/<string>$APS_ENVIRONMENT<\\/string>/" "$ENTITLEMENTS" > "$SIGNED_ENTITLEMENTS"
+
+  # shellcheck disable=SC2086
+  /usr/bin/codesign --force --sign "$CODESIGN_IDENTITY" $CODESIGN_OPTIONS --entitlements "$SIGNED_ENTITLEMENTS" "$APP_BUNDLE" >/dev/null
+else
+  /usr/bin/codesign --force --sign - "$APP_BUNDLE" >/dev/null
+fi
 
 open_app() {
   /usr/bin/open -n "$APP_BUNDLE"

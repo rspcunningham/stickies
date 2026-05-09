@@ -111,6 +111,54 @@ public final class NoteStore: ObservableObject {
         updateFloatsAboveWindows(id: id, floatsAboveWindows: !note.floatsAboveWindows)
     }
 
+    public func applyRemoteChanges(upserting remoteNotes: [StickyNote], deleting deletedIDs: [UUID]) {
+        guard !remoteNotes.isEmpty || !deletedIDs.isEmpty else {
+            return
+        }
+
+        var nextNotes = notes
+        let deletedIDSet = Set(deletedIDs)
+
+        for id in deletedIDSet {
+            saveTasks[id]?.cancel()
+            saveTasks[id] = nil
+            nextNotes.removeAll { $0.id == id }
+        }
+
+        for remoteNote in remoteNotes where !deletedIDSet.contains(remoteNote.id) {
+            saveTasks[remoteNote.id]?.cancel()
+            saveTasks[remoteNote.id] = nil
+
+            if let index = nextNotes.firstIndex(where: { $0.id == remoteNote.id }) {
+                nextNotes[index] = remoteNote
+            } else {
+                nextNotes.append(remoteNote)
+            }
+        }
+
+        nextNotes.sort(by: noteSort)
+        notes = nextNotes
+
+        do {
+            for id in deletedIDSet {
+                try diskStore.delete(id: id)
+            }
+
+            for remoteNote in remoteNotes where !deletedIDSet.contains(remoteNote.id) {
+                try diskStore.save(remoteNote)
+            }
+
+            lastDiskFingerprint = try diskFingerprint()
+            lastError = nil
+        } catch {
+            report(error)
+        }
+    }
+
+    public func setLastError(_ message: String?) {
+        lastError = message
+    }
+
     public func flushPendingSaves() {
         saveTasks.values.forEach { $0.cancel() }
         saveTasks.removeAll()
@@ -193,6 +241,14 @@ public final class NoteStore: ObservableObject {
 
     private func report(_ error: Error) {
         lastError = error.localizedDescription
+    }
+
+    private func noteSort(lhs: StickyNote, rhs: StickyNote) -> Bool {
+        if lhs.createdAt == rhs.createdAt {
+            return lhs.id.uuidString < rhs.id.uuidString
+        }
+
+        return lhs.createdAt < rhs.createdAt
     }
 }
 
