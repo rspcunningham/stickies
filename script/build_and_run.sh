@@ -16,7 +16,7 @@ INFO_PLIST="$APP_CONTENTS/Info.plist"
 
 cd "$ROOT_DIR"
 
-pkill -x "$APP_NAME" >/dev/null 2>&1 || true
+pkill -f "$APP_BINARY" >/dev/null 2>&1 || true
 
 swift build
 BUILD_BINARY="$(swift build --show-bin-path)/$APP_NAME"
@@ -69,11 +69,10 @@ case "$MODE" in
   --verify|verify)
     open_app
     sleep 1
-    pgrep -x "$APP_NAME" >/dev/null
+    pgrep -f "$APP_BINARY" >/dev/null
     ;;
   *)
     echo "usage: $0 [run|--debug|--logs|--telemetry|--verify]" >&2
     exit 2
     ;;
 esac
-

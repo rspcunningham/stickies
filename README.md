@@ -26,3 +26,9 @@ as a foreground macOS app.
 swift test
 ```
 
+## Storage
+
+Notes are stored as one Markdown file per note in `~/.stickies/notes`. Each file
+starts with a small JSON metadata comment for the note id, color, timestamps, and
+window frame, followed by the editable Markdown/plain-text body.
+
