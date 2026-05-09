@@ -60,6 +60,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let newItem = fileMenu.addItem(withTitle: "New Note", action: #selector(newNote(_:)), keyEquivalent: "n")
         newItem.target = self
 
+        let closeItem = fileMenu.addItem(withTitle: "Close Note", action: #selector(deleteActiveNote(_:)), keyEquivalent: "w")
+        closeItem.target = self
+
         let deleteItem = fileMenu.addItem(withTitle: "Delete Note", action: #selector(deleteActiveNote(_:)), keyEquivalent: "\u{8}")
         deleteItem.target = self
 
