@@ -9,7 +9,7 @@ enum StickiesMain {
         let app = NSApplication.shared
 
         app.delegate = appDelegate
-        app.setActivationPolicy(.regular)
+        app.setActivationPolicy(.accessory)
         app.run()
     }
 }

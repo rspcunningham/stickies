@@ -39,6 +39,10 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
         panel.makeKeyAndOrderFront(nil)
     }
 
+    func orderFront() {
+        panel.orderFront(nil)
+    }
+
     func update(note: StickyNote) {
         panel.backgroundColor = note.color.nsColor
 

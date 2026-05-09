@@ -31,6 +31,12 @@ final class WindowManager {
         }
     }
 
+    func orderAllFront() {
+        for controller in controllers.values {
+            controller.orderFront()
+        }
+    }
+
     private func syncWindows(with notes: [StickyNote]) {
         let noteIDs = Set(notes.map(\.id))
 
