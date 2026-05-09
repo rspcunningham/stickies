@@ -8,11 +8,12 @@ struct NoteEditorView: View {
 
     var body: some View {
         if let note = store.note(id: noteID) {
-            ZStack(alignment: .topLeading) {
+            ZStack(alignment: .topTrailing) {
                 TextEditor(text: textBinding(for: note.id))
                     .font(.system(size: 15))
                     .scrollContentBackground(.hidden)
-                    .padding(.horizontal, 12)
+                    .padding(.leading, 12)
+                    .padding(.trailing, 28)
                     .padding(.top, 2)
                     .padding(.bottom, 12)
 
@@ -28,7 +29,7 @@ struct NoteEditorView: View {
                 .buttonStyle(.plain)
                 .help("Close Note")
                 .padding(.top, 7)
-                .padding(.leading, 8)
+                .padding(.trailing, 8)
                 .onHover { closeButtonHovered = $0 }
             }
             .background(note.color.swiftUIColor)
