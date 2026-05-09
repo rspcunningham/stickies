@@ -3,6 +3,8 @@ import SwiftUI
 
 struct PlainTextEditor: NSViewRepresentable {
     @Binding var text: String
+    let fontFamily: EditorFontFamily
+    let fontSize: Double
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -18,7 +20,7 @@ struct PlainTextEditor: NSViewRepresentable {
         let textView = NSTextView()
         textView.delegate = context.coordinator
         textView.string = text
-        textView.font = .systemFont(ofSize: 15)
+        applyFont(to: textView)
         textView.textColor = .labelColor
         textView.drawsBackground = false
         textView.isRichText = false
@@ -37,16 +39,28 @@ struct PlainTextEditor: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let textView = scrollView.documentView as? NSTextView,
-              textView.string != text else {
+        guard let textView = scrollView.documentView as? NSTextView else {
             return
         }
 
-        textView.string = text
+        applyFont(to: textView)
+
+        if textView.string != text {
+            textView.string = text
+        }
     }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
+    }
+
+    private func applyFont(to textView: NSTextView) {
+        let font = fontFamily.font(size: CGFloat(fontSize))
+        guard textView.font?.fontName != font.fontName || textView.font?.pointSize != font.pointSize else {
+            return
+        }
+
+        textView.font = font
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
@@ -65,4 +79,3 @@ struct PlainTextEditor: NSViewRepresentable {
         }
     }
 }
-

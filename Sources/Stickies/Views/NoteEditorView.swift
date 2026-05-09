@@ -5,11 +5,17 @@ import SwiftUI
 struct NoteEditorView: View {
     let noteID: UUID
     @ObservedObject var store: NoteStore
+    @AppStorage(EditorPreferences.fontFamilyKey) private var editorFontFamilyRawValue = EditorPreferences.defaultFontFamily.rawValue
+    @AppStorage(EditorPreferences.fontSizeKey) private var editorFontSize = EditorPreferences.defaultFontSize
 
     var body: some View {
         if let note = store.note(id: noteID) {
             ZStack(alignment: .topTrailing) {
-                PlainTextEditor(text: textBinding(for: note.id))
+                PlainTextEditor(
+                    text: textBinding(for: note.id),
+                    fontFamily: editorFontFamily,
+                    fontSize: EditorPreferences.clampedFontSize(editorFontSize)
+                )
                     .padding(.leading, 12)
                     .padding(.trailing, 47)
                     .padding(.top, 12)
@@ -65,6 +71,10 @@ struct NoteEditorView: View {
 
     @State private var pinButtonHovered = false
     @State private var closeButtonHovered = false
+
+    private var editorFontFamily: EditorFontFamily {
+        EditorFontFamily(rawValue: editorFontFamilyRawValue) ?? EditorPreferences.defaultFontFamily
+    }
 
     private func textBinding(for id: UUID) -> Binding<String> {
         Binding {

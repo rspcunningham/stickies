@@ -56,6 +56,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         NSWorkspace.shared.open(noteStore.notesDirectory)
     }
 
+    @objc private func setEditorFontFamily(_ sender: Any?) {
+        guard let menuItem = sender as? NSMenuItem,
+              let rawValue = menuItem.representedObject as? String,
+              let fontFamily = EditorFontFamily(rawValue: rawValue) else {
+            return
+        }
+
+        EditorPreferences.fontFamily = fontFamily
+    }
+
+    @objc private func increaseEditorFontSize(_ sender: Any?) {
+        EditorPreferences.fontSize += EditorPreferences.fontSizeStep
+    }
+
+    @objc private func decreaseEditorFontSize(_ sender: Any?) {
+        EditorPreferences.fontSize -= EditorPreferences.fontSizeStep
+    }
+
+    @objc private func resetEditorFontSize(_ sender: Any?) {
+        EditorPreferences.fontSize = EditorPreferences.defaultFontSize
+    }
+
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(closeActiveNote(_:)):
@@ -64,6 +86,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             let note = targetNote()
             menuItem.state = note?.floatsAboveWindows == true ? .on : .off
             return note != nil
+        case #selector(setEditorFontFamily(_:)):
+            guard let rawValue = menuItem.representedObject as? String,
+                  let fontFamily = EditorFontFamily(rawValue: rawValue) else {
+                return false
+            }
+
+            menuItem.state = EditorPreferences.fontFamily == fontFamily ? .on : .off
+            return true
+        case #selector(increaseEditorFontSize(_:)):
+            return EditorPreferences.fontSize < EditorPreferences.maximumFontSize
+        case #selector(decreaseEditorFontSize(_:)):
+            return EditorPreferences.fontSize > EditorPreferences.minimumFontSize
         default:
             return true
         }
@@ -90,6 +124,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
         let floatItem = makeFloatAboveOtherWindowsItem()
         menu.addItem(floatItem)
+
+        menu.addItem(editorSettingsMenuItem(title: "Text"))
 
         menu.addItem(.separator())
 
@@ -127,6 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         folderItem.target = self
 
         mainMenu.addItem(editMenuItem())
+        mainMenu.addItem(formatMenuItem())
         mainMenu.addItem(windowMenuItem())
 
         NSApp.mainMenu = mainMenu
@@ -146,6 +183,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
 
         return editItem
+    }
+
+    private func formatMenuItem() -> NSMenuItem {
+        editorSettingsMenuItem(title: "Format")
     }
 
     private func windowMenuItem() -> NSMenuItem {
@@ -189,6 +230,65 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             keyEquivalent: "f"
         )
         item.keyEquivalentModifierMask = [.command, .option]
+        item.target = self
+        return item
+    }
+
+    private func editorSettingsMenuItem(title: String) -> NSMenuItem {
+        let item = NSMenuItem()
+        let menu = NSMenu(title: title)
+        item.title = title
+        item.submenu = menu
+
+        for fontFamily in EditorFontFamily.allCases {
+            menu.addItem(fontFamilyMenuItem(fontFamily))
+        }
+
+        menu.addItem(.separator())
+        menu.addItem(decreaseTextSizeMenuItem())
+        menu.addItem(increaseTextSizeMenuItem())
+        menu.addItem(resetTextSizeMenuItem())
+
+        return item
+    }
+
+    private func fontFamilyMenuItem(_ fontFamily: EditorFontFamily) -> NSMenuItem {
+        let item = NSMenuItem(
+            title: fontFamily.title,
+            action: #selector(setEditorFontFamily(_:)),
+            keyEquivalent: ""
+        )
+        item.representedObject = fontFamily.rawValue
+        item.target = self
+        return item
+    }
+
+    private func increaseTextSizeMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(
+            title: "Larger Text",
+            action: #selector(increaseEditorFontSize(_:)),
+            keyEquivalent: "+"
+        )
+        item.target = self
+        return item
+    }
+
+    private func decreaseTextSizeMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(
+            title: "Smaller Text",
+            action: #selector(decreaseEditorFontSize(_:)),
+            keyEquivalent: "-"
+        )
+        item.target = self
+        return item
+    }
+
+    private func resetTextSizeMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(
+            title: "Reset Text Size",
+            action: #selector(resetEditorFontSize(_:)),
+            keyEquivalent: "0"
+        )
         item.target = self
         return item
     }
