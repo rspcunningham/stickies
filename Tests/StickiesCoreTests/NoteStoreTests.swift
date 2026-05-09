@@ -19,11 +19,13 @@ func noteStoreCreatesDefaultNoteAndAutosavesTextUpdates() async throws {
 
     let note = try #require(store.notes.first)
     store.updateText(id: note.id, text: "autosaved markdown")
+    store.updateFloatsAboveWindows(id: note.id, floatsAboveWindows: false)
 
     try await Task.sleep(for: .milliseconds(650))
 
     let loaded = try diskStore.loadNotes()
     #expect(loaded.first?.text == "autosaved markdown")
+    #expect(loaded.first?.floatsAboveWindows == false)
 }
 
 @MainActor
@@ -61,4 +63,3 @@ private func temporaryDirectory() -> URL {
     FileManager.default.temporaryDirectory
         .appendingPathComponent("stickies-tests-\(UUID().uuidString)", isDirectory: true)
 }
-

@@ -11,6 +11,7 @@ func noteFileRoundTripPreservesMetadataAndMarkdown() throws {
         text: "# Heading\n\n- one\n- two",
         frame: StickyWindowFrame(x: 12, y: 34, width: 400, height: 260),
         color: .blue,
+        floatsAboveWindows: false,
         createdAt: createdAt,
         updatedAt: updatedAt
     )
@@ -30,5 +31,5 @@ func plainMarkdownWithoutMetadataUsesFallbackID() throws {
     #expect(decoded.text == "plain **markdown**")
     #expect(decoded.frame == .default)
     #expect(decoded.color == .yellow)
+    #expect(decoded.floatsAboveWindows)
 }
-

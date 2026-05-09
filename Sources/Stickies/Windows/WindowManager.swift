@@ -7,27 +7,17 @@ final class WindowManager {
     private let store: NoteStore
     private var cancellable: AnyCancellable?
     private var controllers: [UUID: NoteWindowController] = [:]
-    private var notesFloatAboveOtherWindows: Bool
 
     private(set) var activeNoteID: UUID?
 
-    init(store: NoteStore, notesFloatAboveOtherWindows: Bool) {
+    init(store: NoteStore) {
         self.store = store
-        self.notesFloatAboveOtherWindows = notesFloatAboveOtherWindows
     }
 
     func start() {
         syncWindows(with: store.notes)
         cancellable = store.notesPublisher.sink { [weak self] notes in
             self?.syncWindows(with: notes)
-        }
-    }
-
-    func setNotesFloatAboveOtherWindows(_ floatsAboveOtherWindows: Bool) {
-        notesFloatAboveOtherWindows = floatsAboveOtherWindows
-
-        for controller in controllers.values {
-            controller.setFloatsAboveOtherWindows(floatsAboveOtherWindows)
         }
     }
 
@@ -51,8 +41,7 @@ final class WindowManager {
             } else {
                 let controller = NoteWindowController(
                     note: note,
-                    store: store,
-                    notesFloatAboveOtherWindows: notesFloatAboveOtherWindows
+                    store: store
                 ) { [weak self] noteID in
                     self?.activeNoteID = noteID
                 }

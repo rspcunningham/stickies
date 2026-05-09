@@ -2,40 +2,17 @@ import AppKit
 import StickiesCore
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
-    private enum DefaultsKey {
-        static let notesFloatAboveOtherWindows = "notesFloatAboveOtherWindows"
-    }
-
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let noteStore = NoteStore()
     private var windowManager: WindowManager?
     private var statusItem: NSStatusItem?
-    private var floatAboveOtherWindowsItems: [NSMenuItem] = []
-
-    private var notesFloatAboveOtherWindows: Bool {
-        get {
-            if UserDefaults.standard.object(forKey: DefaultsKey.notesFloatAboveOtherWindows) == nil {
-                return true
-            }
-
-            return UserDefaults.standard.bool(forKey: DefaultsKey.notesFloatAboveOtherWindows)
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: DefaultsKey.notesFloatAboveOtherWindows)
-            updateFloatMenuItemStates()
-            windowManager?.setNotesFloatAboveOtherWindows(newValue)
-        }
-    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildMainMenu()
         buildStatusItem()
 
         noteStore.start()
-        let windowManager = WindowManager(
-            store: noteStore,
-            notesFloatAboveOtherWindows: notesFloatAboveOtherWindows
-        )
+        let windowManager = WindowManager(store: noteStore)
         self.windowManager = windowManager
         windowManager.start()
 
@@ -62,8 +39,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         noteStore.deleteNote(id: noteID)
     }
 
-    @objc private func toggleNotesFloatAboveOtherWindows(_ sender: Any?) {
-        notesFloatAboveOtherWindows.toggle()
+    @objc private func toggleActiveNoteFloatsAboveWindows(_ sender: Any?) {
+        guard let noteID = targetNoteID() else {
+            return
+        }
+
+        noteStore.toggleFloatsAboveWindows(id: noteID)
     }
 
     @objc private func bringAllNotesToFront(_ sender: Any?) {
@@ -73,6 +54,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func showNotesFolder(_ sender: Any?) {
         NSWorkspace.shared.open(noteStore.notesDirectory)
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        switch menuItem.action {
+        case #selector(closeActiveNote(_:)):
+            return targetNoteID() != nil
+        case #selector(toggleActiveNoteFloatsAboveWindows(_:)):
+            let note = targetNote()
+            menuItem.state = note?.floatsAboveWindows == true ? .on : .off
+            return note != nil
+        default:
+            return true
+        }
     }
 
     private func buildStatusItem() {
@@ -191,20 +185,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func makeFloatAboveOtherWindowsItem() -> NSMenuItem {
         let item = NSMenuItem(
             title: "Float Above Windows",
-            action: #selector(toggleNotesFloatAboveOtherWindows(_:)),
+            action: #selector(toggleActiveNoteFloatsAboveWindows(_:)),
             keyEquivalent: "f"
         )
         item.keyEquivalentModifierMask = [.command, .option]
         item.target = self
-        item.state = notesFloatAboveOtherWindows ? .on : .off
-        floatAboveOtherWindowsItems.append(item)
         return item
     }
 
-    private func updateFloatMenuItemStates() {
-        let state: NSControl.StateValue = notesFloatAboveOtherWindows ? .on : .off
-        for item in floatAboveOtherWindowsItems {
-            item.state = state
+    private func targetNoteID() -> UUID? {
+        windowManager?.activeNoteID ?? noteStore.notes.last?.id
+    }
+
+    private func targetNote() -> StickyNote? {
+        guard let noteID = targetNoteID() else {
+            return nil
         }
+
+        return noteStore.note(id: noteID)
     }
 }

@@ -34,6 +34,7 @@ public struct StickyNote: Identifiable, Codable, Equatable, Sendable {
     public var text: String
     public var frame: StickyWindowFrame
     public var color: StickyColor
+    public var floatsAboveWindows: Bool
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -42,6 +43,7 @@ public struct StickyNote: Identifiable, Codable, Equatable, Sendable {
         text: String = "",
         frame: StickyWindowFrame = .default,
         color: StickyColor = .yellow,
+        floatsAboveWindows: Bool = true,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -49,6 +51,7 @@ public struct StickyNote: Identifiable, Codable, Equatable, Sendable {
         self.text = text
         self.frame = frame
         self.color = color
+        self.floatsAboveWindows = floatsAboveWindows
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -57,4 +60,3 @@ public struct StickyNote: Identifiable, Codable, Equatable, Sendable {
         "\(id.uuidString.lowercased()).md"
     }
 }
-

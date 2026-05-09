@@ -14,7 +14,6 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
     init(
         note: StickyNote,
         store: NoteStore,
-        notesFloatAboveOtherWindows: Bool,
         activationHandler: @escaping (UUID) -> Void
     ) {
         noteID = note.id
@@ -32,7 +31,7 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
 
         panel.delegate = self
         panel.contentViewController = NSHostingController(rootView: NoteEditorView(noteID: note.id, store: store))
-        configureWindow(for: note, notesFloatAboveOtherWindows: notesFloatAboveOtherWindows)
+        configureWindow(for: note)
     }
 
     func show() {
@@ -45,6 +44,7 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
 
     func update(note: StickyNote) {
         panel.backgroundColor = note.color.nsColor
+        setFloatsAboveOtherWindows(note.floatsAboveWindows)
 
         let currentFrame = StickyWindowFrame(nsRect: panel.frame)
         if currentFrame != note.frame, !panel.inLiveResize {
@@ -90,7 +90,7 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
         store?.deleteNote(id: noteID)
     }
 
-    private func configureWindow(for note: StickyNote, notesFloatAboveOtherWindows: Bool) {
+    private func configureWindow(for note: StickyNote) {
         panel.title = "Sticky Note"
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
@@ -102,7 +102,7 @@ final class NoteWindowController: NSObject, NSWindowDelegate {
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 220, height: 160)
         panel.backgroundColor = note.color.nsColor
-        setFloatsAboveOtherWindows(notesFloatAboveOtherWindows)
+        setFloatsAboveOtherWindows(note.floatsAboveWindows)
         panel.setFrame(note.frame.nsRect.clampedToVisibleScreen(), display: false)
     }
 

@@ -38,6 +38,7 @@ public enum NoteFileCodec {
             text: String(source[bodyStart...]),
             frame: metadata.frame,
             color: metadata.color,
+            floatsAboveWindows: metadata.floatsAboveWindows,
             createdAt: metadata.createdAt,
             updatedAt: metadata.updatedAt
         )
@@ -48,6 +49,7 @@ private struct NoteFileMetadata: Codable {
     var id: UUID
     var frame: StickyWindowFrame
     var color: StickyColor
+    var floatsAboveWindows: Bool
     var createdAt: Date
     var updatedAt: Date
 
@@ -55,8 +57,20 @@ private struct NoteFileMetadata: Codable {
         id = note.id
         frame = note.frame
         color = note.color
+        floatsAboveWindows = note.floatsAboveWindows
         createdAt = note.createdAt
         updatedAt = note.updatedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        frame = try container.decode(StickyWindowFrame.self, forKey: .frame)
+        color = try container.decode(StickyColor.self, forKey: .color)
+        floatsAboveWindows = try container.decodeIfPresent(Bool.self, forKey: .floatsAboveWindows) ?? true
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
 }
 

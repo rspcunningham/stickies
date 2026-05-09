@@ -92,6 +92,25 @@ public final class NoteStore: ObservableObject {
         scheduleSave(notes[index])
     }
 
+    public func updateFloatsAboveWindows(id: UUID, floatsAboveWindows: Bool) {
+        guard let index = notes.firstIndex(where: { $0.id == id }),
+              notes[index].floatsAboveWindows != floatsAboveWindows else {
+            return
+        }
+
+        notes[index].floatsAboveWindows = floatsAboveWindows
+        notes[index].updatedAt = Date()
+        scheduleSave(notes[index])
+    }
+
+    public func toggleFloatsAboveWindows(id: UUID) {
+        guard let note = note(id: id) else {
+            return
+        }
+
+        updateFloatsAboveWindows(id: id, floatsAboveWindows: !note.floatsAboveWindows)
+    }
+
     public func flushPendingSaves() {
         saveTasks.values.forEach { $0.cancel() }
         saveTasks.removeAll()
@@ -210,4 +229,3 @@ private struct DiskFingerprint: Equatable {
         var size: Int
     }
 }
-
