@@ -5,6 +5,7 @@ import PackageDescription
 let package = Package(
     name: "Stickies",
     platforms: [
+        .iOS("18.0"),
         .macOS("26.0")
     ],
     products: [
@@ -23,4 +24,3 @@ let package = Package(
         )
     ]
 )
-

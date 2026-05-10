@@ -30,6 +30,23 @@ func noteStoreCreatesDefaultNoteAndAutosavesTextUpdates() async throws {
 
 @MainActor
 @Test
+func noteStoreCanStartWithoutCreatingDefaultNote() throws {
+    let directory = temporaryDirectory()
+    defer {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    let store = NoteStore(diskStore: NoteDiskStore(directory: directory))
+    store.start(createNoteIfEmpty: false)
+    defer {
+        store.stop()
+    }
+
+    #expect(store.notes.isEmpty)
+}
+
+@MainActor
+@Test
 func noteStoreHotReloadsExternalDiskChanges() async throws {
     let directory = temporaryDirectory()
     defer {

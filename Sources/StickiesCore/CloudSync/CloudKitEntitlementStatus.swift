@@ -1,8 +1,11 @@
 import Foundation
+#if os(macOS)
 import Security
+#endif
 
-enum CloudKitEntitlementStatus {
-    static var canUseCloudKit: Bool {
+public enum CloudKitEntitlementStatus {
+    public static var canUseCloudKit: Bool {
+        #if os(macOS)
         guard let task = SecTaskCreateFromSelf(nil),
               let services = SecTaskCopyValueForEntitlement(
                 task,
@@ -13,5 +16,8 @@ enum CloudKitEntitlementStatus {
         }
 
         return services.contains("CloudKit")
+        #else
+        true
+        #endif
     }
 }

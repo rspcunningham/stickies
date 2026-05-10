@@ -1,9 +1,8 @@
 import Combine
 import Foundation
-import StickiesCore
 
 @MainActor
-final class CloudNoteSyncController {
+public final class CloudNoteSyncController {
     private enum DefaultsKey {
         static let knownRemoteNoteIDs = "cloudSyncKnownRemoteNoteIDs"
     }
@@ -18,12 +17,17 @@ final class CloudNoteSyncController {
     private var pendingDeletedNoteIDs: Set<UUID> = []
     private var isApplyingRemoteChanges = false
 
-    init(store: NoteStore, service: CloudKitNoteSyncService = CloudKitNoteSyncService()) {
+    public init(store: NoteStore) {
+        self.store = store
+        service = CloudKitNoteSyncService()
+    }
+
+    init(store: NoteStore, service: CloudKitNoteSyncService) {
         self.store = store
         self.service = service
     }
 
-    func start() {
+    public func start() {
         knownNotesByID = notesByID(store.notes)
         cancellable = store.notesPublisher.sink { [weak self] notes in
             self?.handleLocalNotesChanged(notes)
@@ -33,7 +37,7 @@ final class CloudNoteSyncController {
         startPollTimer()
     }
 
-    func stop() {
+    public func stop() {
         pollTimer?.invalidate()
         pollTimer = nil
         syncTask?.cancel()
@@ -41,7 +45,7 @@ final class CloudNoteSyncController {
         cancellable = nil
     }
 
-    func syncNow(reason: String) {
+    public func syncNow(reason: String) {
         syncSoon(reason: reason, delay: .zero)
     }
 

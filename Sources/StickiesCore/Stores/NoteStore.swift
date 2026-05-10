@@ -22,8 +22,8 @@ public final class NoteStore: ObservableObject {
         notesDirectory = diskStore.directory
     }
 
-    public func start() {
-        reloadFromDisk(createNoteIfEmpty: true)
+    public func start(createNoteIfEmpty: Bool = true) {
+        reloadFromDisk(createNoteIfEmpty: createNoteIfEmpty)
         startReloadTimer()
     }
 
@@ -37,7 +37,8 @@ public final class NoteStore: ObservableObject {
         notes.first { $0.id == id }
     }
 
-    public func createNote() {
+    @discardableResult
+    public func createNote() -> StickyNote {
         let offset = Double(notes.count % 7) * 28
         var frame = StickyWindowFrame.default
         frame.x += offset
@@ -51,6 +52,7 @@ public final class NoteStore: ObservableObject {
 
         notes.append(note)
         saveImmediately(note)
+        return note
     }
 
     public func deleteNote(id: UUID) {
@@ -99,6 +101,17 @@ public final class NoteStore: ObservableObject {
         }
 
         notes[index].floatsAboveWindows = floatsAboveWindows
+        notes[index].updatedAt = Date()
+        scheduleSave(notes[index])
+    }
+
+    public func updateColor(id: UUID, color: StickyColor) {
+        guard let index = notes.firstIndex(where: { $0.id == id }),
+              notes[index].color != color else {
+            return
+        }
+
+        notes[index].color = color
         notes[index].updatedAt = Date()
         scheduleSave(notes[index])
     }

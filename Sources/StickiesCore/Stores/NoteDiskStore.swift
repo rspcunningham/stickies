@@ -10,9 +10,18 @@ public final class NoteDiskStore: @unchecked Sendable {
     }
 
     public static var defaultDirectory: URL {
+        #if os(iOS)
+        let baseDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+
+        return baseDirectory
+            .appendingPathComponent("Stickies", isDirectory: true)
+            .appendingPathComponent(StickiesCore.notesDirectoryName, isDirectory: true)
+        #else
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(StickiesCore.storageDirectoryName, isDirectory: true)
             .appendingPathComponent(StickiesCore.notesDirectoryName, isDirectory: true)
+        #endif
     }
 
     public func ensureDirectory() throws {
@@ -68,4 +77,3 @@ public final class NoteDiskStore: @unchecked Sendable {
         directory.appendingPathComponent("\(id.uuidString.lowercased()).md", isDirectory: false)
     }
 }
-

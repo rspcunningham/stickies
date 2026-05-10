@@ -1,0 +1,43 @@
+name: Stickies
+options:
+  deploymentTarget:
+    iOS: "18.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: K5PRHP9Q23
+    SWIFT_VERSION: 6.0
+targets:
+  StickiesCore:
+    type: framework
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sources/StickiesCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.rspcunningham.stickies.core
+        GENERATE_INFOPLIST_FILE: YES
+  StickiesIOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sources/StickiesIOS
+    dependencies:
+      - target: StickiesCore
+    settings:
+      base:
+        PRODUCT_NAME: Stickies
+        PRODUCT_BUNDLE_IDENTIFIER: dev.rspcunningham.stickies
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: StickiesIOS.entitlements
+        INFOPLIST_FILE: Sources/StickiesIOS/Info.plist
+schemes:
+  StickiesIOS:
+    build:
+      targets:
+        StickiesIOS: all
+    run:
+      config: Debug
+    test:
+      config: Debug

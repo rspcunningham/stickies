@@ -1,6 +1,5 @@
 import CloudKit
 import Foundation
-import StickiesCore
 
 @MainActor
 final class CloudKitNoteSyncService {
