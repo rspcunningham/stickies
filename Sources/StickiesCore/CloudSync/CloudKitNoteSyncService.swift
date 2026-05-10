@@ -48,16 +48,18 @@ final class CloudKitNoteSyncService {
     func fetchNotes() async throws -> [StickyNote] {
         try await prepareIfNeeded()
 
-        let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
-        query.sortDescriptors = [NSSortDescriptor(key: Field.createdAt, ascending: true)]
-
         var notes: [StickyNote] = []
-        var response = try await database.records(matching: query, inZoneWith: zoneID)
-        try appendNotes(from: response.matchResults, to: &notes)
+        var changeToken: CKServerChangeToken?
+        var moreComing = true
 
-        while let cursor = response.queryCursor {
-            response = try await database.records(continuingMatchFrom: cursor)
-            try appendNotes(from: response.matchResults, to: &notes)
+        while moreComing {
+            let response = try await database.recordZoneChanges(
+                inZoneWith: zoneID,
+                since: changeToken
+            )
+            try appendNotes(from: response.modificationResultsByID, to: &notes)
+            changeToken = response.changeToken
+            moreComing = response.moreComing
         }
 
         return notes.sorted { lhs, rhs in
@@ -130,11 +132,15 @@ final class CloudKitNoteSyncService {
     }
 
     private func appendNotes(
-        from matchResults: [(CKRecord.ID, Result<CKRecord, any Error>)],
+        from modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, any Error>],
         to notes: inout [StickyNote]
     ) throws {
-        for (_, recordResult) in matchResults {
-            let record = try recordResult.get()
+        for (_, modificationResult) in modificationResultsByID {
+            let record = try modificationResult.get().record
+            guard record.recordType == recordType else {
+                continue
+            }
+
             notes.append(try note(from: record))
         }
     }

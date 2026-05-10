@@ -15,6 +15,7 @@ APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
 ENTITLEMENTS="$ROOT_DIR/Stickies.entitlements"
 SIGNED_ENTITLEMENTS="$DIST_DIR/Stickies.signed.entitlements"
+PROFILE_PLIST="$DIST_DIR/Stickies.provisioning-profile.plist"
 CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
 PROVISIONING_PROFILE="${PROVISIONING_PROFILE:-}"
 CODESIGN_OPTIONS="${CODESIGN_OPTIONS:---options runtime}"
@@ -63,7 +64,17 @@ if [[ -n "$CODESIGN_IDENTITY" && -f "$ENTITLEMENTS" ]]; then
   fi
 
   cp "$PROVISIONING_PROFILE" "$APP_CONTENTS/embedded.provisionprofile"
-  sed "s/<string>development<\\/string>/<string>$APS_ENVIRONMENT<\\/string>/" "$ENTITLEMENTS" > "$SIGNED_ENTITLEMENTS"
+  /usr/bin/security cms -D -i "$PROVISIONING_PROFILE" > "$PROFILE_PLIST"
+
+  APP_IDENTIFIER="$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.application-identifier" "$PROFILE_PLIST")"
+  TEAM_IDENTIFIER="$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.developer.team-identifier" "$PROFILE_PLIST")"
+
+  cp "$ENTITLEMENTS" "$SIGNED_ENTITLEMENTS"
+  /usr/libexec/PlistBuddy -c "Set :com.apple.developer.aps-environment $APS_ENVIRONMENT" "$SIGNED_ENTITLEMENTS"
+  /usr/libexec/PlistBuddy -c "Delete :com.apple.application-identifier" "$SIGNED_ENTITLEMENTS" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string $APP_IDENTIFIER" "$SIGNED_ENTITLEMENTS"
+  /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.team-identifier" "$SIGNED_ENTITLEMENTS" >/dev/null 2>&1 || true
+  /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string $TEAM_IDENTIFIER" "$SIGNED_ENTITLEMENTS"
 
   # shellcheck disable=SC2086
   /usr/bin/codesign --force --sign "$CODESIGN_IDENTITY" $CODESIGN_OPTIONS --entitlements "$SIGNED_ENTITLEMENTS" "$APP_BUNDLE" >/dev/null
